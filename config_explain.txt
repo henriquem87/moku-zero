@@ -1,0 +1,115 @@
+###############################################################################
+#
+# Copyright (c) 2018, Henrique Morimitsu,
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# #############################################################################
+
+This file provides a brief explanation of the arguments related to moku
+games in config.py
+
+drop_mode: if True, the pieces drop to the bottom of the board (like in 
+    connect4).
+moku_size: number of consecutive pieces in a row that are required to win the
+    game.
+board_size: the number of rows and columns of the board.
+max_simulations_per_move: number of MCTS simulations that are executed for
+    choosing each move.
+eval_batch_size: number of MCTS leaf nodes that are stored before being 
+    evaluated by the network. A larger batch size (up to memory constraints) is
+    usually faster, but it also degrades the exploration and expansion of the
+    MCTS tree.
+num_games_per_checkpoint: for the training stage, the minimum number of games
+    that are played before changing to a newer checkpoint.
+num_relaxed_turns: during the first num_relaxed_turns, the move_temperature
+    (see move_temperature) will be set to 1.0. This can be used to include more
+    randomness and enforce more exploration in the opening.
+max_samples_per_result_to_train: maximum number of training samples that are
+    kept for each result type. Typically, the result types are P1 win, P2 win
+    and draw. That means we will keep up to max_samples_per_result_to_train
+    samples (each move in a game is a sample, so one game contains many
+    samples). Once the samples saturate this value, older samples start to
+    be removed to give room for the newer ones. Decreasing this value may be
+    useful to force the training to ignore old and less reliable samples. It
+    can also be used to bound the memory usage since currently all the samples
+    are kept directly in the memory.
+num_channels: ResNet argument indicating how many channels each layer of the
+    network will have.
+num_res_layers: ResNet argument indicating how many residual layers the network
+    will have.
+max_train_iters: number of training iterations until stopping the training.
+random_move_probability: the probability of making a totally random move at any
+    moment during the game. Notice that this totally disregards the network
+    predictions. The move is randomly chosen from a uniform distribution over
+    all valid moves. This may be useful to generate more diverse training
+    samples when the game has a one-sided optimal strategy. In this case, once
+    the optimal strategy is found, the network may start to generate only the
+    winning strategy path, thus hindering diversity and biasing the training.
+log_interval: after how many training iterations a log message is printed.
+save_ckpt_interval: after how many training iterations a new checkpoint is
+    saved.
+initial_lr: starting learning rate of the training.
+lr_decay: a factor that is multiplied by the learning rate at each decay step.
+lr_decay_steps: a list of iteration numbers at which the learning rate is
+    multiplied by the decay factor.
+augment_training_samples: whether to augment the training by distorting the
+    training samples (e.g. by applying random flipping).
+backpropagate_losing_policies: If False, the policy loss for any move played by
+    the losing player is set to zero. This may be useful for enforcing the
+    network to learn only good moves, but it may also present difficulties
+    when the samples are one-sided.
+use_relative_value_labels: if False, value labels are ternary values in
+    {-1, 0, 1} representing loss, draw and win. If True, win and loss values 
+    are relative to the number of moves remaining until reaching the deciding
+    move. A win value can be any value in the interval [0.5, 1.0]. A win value
+    of 0.5 means that the player will win only after playing the maximum number
+    of moves of the game. Conversely, a win value of 1.0 means that the player
+    will win at the next move. The same idea is applied for losses with the
+    sign reversed. If the network is able to learn such values, MCTS can
+    prioritize faster wins and longer losses.
+keep_checkpoint_every_n_hours: by default, only the last 5 checkpoints are kept
+    on disk. If you want to periodically permanently keep checkpoints, set this
+    argument to a value larger than zero. Checkpoints saved by this option will
+    be identified by .ckpt-keep in their names.
+queue_capacity: maximum size of the queues to exchange information between
+    different processes.
+train_batch_size: size of the mini-batch for the training.
+max_seconds_per_move: maximum time in seconds that MCTS is allowed to run per
+    move. MCTS will be stopped after this time is elapsed even if
+    max_simulations_per_move moves are not evaluated yet.
+move_temperature: an exponential factor to re-balance the probabilities of
+    playing each move. Higher values will make the distribution more flat,
+    while lower ones will make it more peaked.
+cpuct: a factor to control MCTS exploration by balancing the influence of 
+    visit counts and network predictions (see more in mcts.py)
+virtual_loss: factor to penalize visiting the same branch in the MCTS tree
+    when eval_batch_size is larger than one.
+root_noise_weight: percentage of how much noise is added to the network
+    prediction in the root node.
+dirichlet_noise_param: parameter controlling the dirichlet distribution.
+num_challenges: default number of challenges that are run between each pair
+    of checkpoints when executing challenge.py.

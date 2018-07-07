@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# Except
+!.gitignore
+!*.py
+!*.sh
+!LICENSE.md
+!README.md
+!config_explain.txt
+!flowchart.dia
+!flowchart.png
+
+# Ignore in subdirectories
+!*/
