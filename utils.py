@@ -123,35 +123,38 @@ def get_checkpoint_path(train_dir, num_iters_ckpt):
       string: path to the corresponding checkpoint with num_iters_ckpt
         iterations.
     """
-    ckpt = tf.train.get_checkpoint_state(train_dir)
-    if num_iters_ckpt < 0 and ckpt and ckpt.model_checkpoint_path:
-        ckpt_path = ckpt.model_checkpoint_path
-    if num_iters_ckpt == 0:
-        ckpt_path = None
-    else:
-        ckpt_files = [f for f in os.listdir(train_dir) if '.ckpt' in f]
-        ckpt_files = [f[:f.rfind('.')] for f in ckpt_files]
-        ckpt_files = sorted(list(set(ckpt_files)))
+    ckpt_path = None
 
-        ckpt_num = [int(f.split('.')[0].split('-')[-1]) for f in ckpt_files]
-        ckpt_dict = {n: f for n, f in zip(ckpt_num, ckpt_files)}
-
-        if num_iters_ckpt < 0 and len(ckpt_files) == 0:
+    if osp.exists(train_dir):
+        ckpt = tf.train.get_checkpoint_state(train_dir)
+        if num_iters_ckpt < 0 and ckpt and ckpt.model_checkpoint_path:
+            ckpt_path = ckpt.model_checkpoint_path
+        elif num_iters_ckpt == 0:
             ckpt_path = None
         else:
-            if num_iters_ckpt < 0:
-                num_iters_ckpt = sorted(ckpt_num)[-1]
+            ckpt_files = [f for f in os.listdir(train_dir) if '.ckpt' in f]
+            ckpt_files = [f[:f.rfind('.')] for f in ckpt_files]
+            ckpt_files = sorted(list(set(ckpt_files)))
 
-            ckpt_name = ckpt_dict.get(num_iters_ckpt)
-            if ckpt_name is None:
-                ckpt_num_str = sorted(list(set(ckpt_num)))
-                ckpt_num_str = [str(x) for x in ckpt_num_str]
-                print('Checkpoint with ' + str(num_iters_ckpt) +
-                      ' iterations cannot be found, the available values ' +
-                      'are: {' + ', '.join(ckpt_num_str) + '}')
-                sys.exit()
+            ckpt_num = [int(f.split('.')[0].split('-')[-1]) for f in ckpt_files]
+            ckpt_dict = {n: f for n, f in zip(ckpt_num, ckpt_files)}
 
-            ckpt_path = osp.join(train_dir, ckpt_name)
+            if num_iters_ckpt < 0 and len(ckpt_files) == 0:
+                ckpt_path = None
+            else:
+                if num_iters_ckpt < 0:
+                    num_iters_ckpt = sorted(ckpt_num)[-1]
+
+                ckpt_name = ckpt_dict.get(num_iters_ckpt)
+                if ckpt_name is None:
+                    ckpt_num_str = sorted(list(set(ckpt_num)))
+                    ckpt_num_str = [str(x) for x in ckpt_num_str]
+                    print('Checkpoint with ' + str(num_iters_ckpt) +
+                        ' iterations cannot be found, the available values ' +
+                        'are: {' + ', '.join(ckpt_num_str) + '}')
+                    sys.exit()
+
+                ckpt_path = osp.join(train_dir, ckpt_name)
     return ckpt_path
 
 
