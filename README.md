@@ -228,6 +228,11 @@ the project to MyGame (should) involve the following steps:
     1. MyGameConfig
     2. MyGameChallengeConfig inheriting from MyGameConfig
     3. MyGameTestConfig inheriting from MyGameConfig
+5. Define a new `game_type` in the `FLAGS` of [test.py](test.py),
+   [challenge.py](challenge.py), [launch_train.py](launch_train.py), and 
+   [launch_players.py](launch_players.py). Also include a new `if` check for
+   this mode in the same files, as well as generate the respective
+   game parameters for the new game type.
 
 ## License
 
