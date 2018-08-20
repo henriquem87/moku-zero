@@ -68,6 +68,12 @@ each other:
     uses 10k simulations per move. Notice that connect4 is a game where, when
     played optimally, the first player always wins.
 
+    [Gomoku model](https://drive.google.com/open?id=1slcYZkDTlj0RRP1qb9Zp7RaL9fCZaL-y)
+    ResNet with 10 residual layers and 128 channels trained for 2.36M iterations
+    using 500 simulations per move. This model still needs to be trained for
+    much longer to reach high-level playing, but it is already plays reasonable
+    moves in most common situations.
+
     To use the downloaded models, follow these steps:
 
     - Create a folder called train_files in `moku-zero`.
@@ -83,7 +89,7 @@ each other:
     - You should now have a directory `moku-zero/train_files/moku_3_3x3`
       containing the checkpoint files inside.
 
-1. Navigate to `moku-zero`:
+4. Navigate to `moku-zero`:
     ```bash
     cd moku-zero
     ```
