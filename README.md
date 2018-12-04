@@ -31,10 +31,7 @@ each other:
 
 - [Python](https://www.python.org/) 3 (tested on Python 3.6)
 - [Numpy](http://www.numpy.org/)
-- [Tensorflow](https://www.tensorflow.org/) 1.9 or at least a build after
-  [b202db0](https://github.com/tensorflow/tensorflow/commit/b202db076ecdc8a0fc80a49252d4a8dd0c8015b3).
-  While it can work with Tensorflow 1.8, it is not recommended, as the Eager
-  implementation had some memory leak problems which affect this code.
+- [Tensorflow](https://www.tensorflow.org/) 1.9 or newer.
 
 ### Installation
 
@@ -55,24 +52,29 @@ each other:
     To understand more about the implemented ResNet models, check
     [net.py](net.py).
 
-    [Tic-Tac-Toe model](https://drive.google.com/open?id=1cUqLqdr8aZebkXkGr0D9o0Ef8ToVHxkk)
+    Tic-Tac-Toe model: ([Google Drive](https://drive.google.com/open?id=1HGfGX5WftNJLUP6A_63_8GnhtWBc4mY4)
+    or [Baidu Yun](https://pan.baidu.com/s/1xbn_RMO-08E7DvM1LimTiA))
     ResNet with 1 residual layer and 32 channels trained for 200k iterations
     using 20 simulations per move. It achieves a result of 0 - 0 - 100
     (all draws) against a NaiveNet (see [net.py](net.py)) which uses
     10k simulations per move.
 
-    [Connect4 model](https://drive.google.com/open?id=1t5bbuN8M2fl-3xU4O9QWbYgxF-5nkES_)
+    Connect4 model: ([Google Drive](https://drive.google.com/open?id=1PArmMtvO2uzQ3-zl1bB06wOCVXt3-qsk)
+    or [Baidu Yun](https://pan.baidu.com/s/1AQZAjoxocTlQChhlwygjXw))
     ResNet with 5 residual layers and 128 channels trained for 5M iterations
     using 100 simulations per move. It achieves a result of 97 - 3 - 0
     (win - loss - draw counts) against a NaiveNet (see [net.py](net.py)) which
     uses 10k simulations per move. Notice that connect4 is a game where, when
     played optimally, the first player always wins.
 
-    [Gomoku model](https://drive.google.com/open?id=1slcYZkDTlj0RRP1qb9Zp7RaL9fCZaL-y)
+    Gomoku model: ([Google Drive](https://drive.google.com/open?id=1A1RfVHcYKyEYqdQ8dlIsrB-liT14NO0L)
+    or [Baidu Yun](https://pan.baidu.com/s/1TRpRDFJtKkPkCfw7exaDfQ))
     ResNet with 10 residual layers and 128 channels trained for 2.36M iterations
     using 500 simulations per move. This model still needs to be trained for
-    much longer to reach high-level playing, but it is already plays reasonable
-    moves in most common situations.
+    much longer to reach high-level playing, but it already plays reasonable
+    moves in most common situations. This model also includes the previously
+    generated games and the checkpoint in case you want to continue the training
+    by yourself.
 
     To use the downloaded models, follow these steps:
 
@@ -83,7 +85,7 @@ each other:
     - Extract the downloaded model into train_files. For example, for
       extracting the tic-tac-toe model, run:
         ```bash
-        tar -zxvf path_to_download_dir/moku_3_3x3.tar.gz -C moku-zero/train_files/
+        unzip path_to_download_dir/moku_3_3x3.zip -d moku-zero/train_files/
         ```
 
     - You should now have a directory `moku-zero/train_files/moku_3_3x3`
@@ -125,7 +127,7 @@ Training a model requires running two scripts:
 
 They can be run on the same computer or on different computers on the same
 network. If you want to stop the training at any moment, just use the command
-`CTRL+C` on the bash window where `launch_train.py` is running.
+`CTRL+C` on the terminal where `launch_train.py` is running.
 
 #### Running on the same computer
 
@@ -182,13 +184,13 @@ For example, to test the most recent model against a random
 player, you can run:
 
 ```bash
-python challenge.py --mode=tictactoe --num_iters_ckpts=0,-1 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
+python challenge.py --mode=tictactoe --num_iters_ckpt=0,-1 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
 ```
 
 Notice that we are redirecting the output to a file called
 `challenge_results.txt`.
 
-If you want to use other checkpoints, replace the `num_iters_ckpts` by a list
+If you want to use other checkpoints, replace the `num_iters_ckpt` by a list
 of checkpoint iteration numbers representing existing checkpoints in the
 training directory. For example, suppose you have the following files in your
 training directory:
@@ -201,7 +203,7 @@ training directory:
 If you want to make all of them play against each other 10 times, you can run:
 
 ```bash
-python challenge.py --mode=tictactoe --num_iters_ckpts=5000,10000,15000,20000 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
+python challenge.py --mode=tictactoe --num_iters_ckpt=5000,10000,15000,20000 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
 ```
 
 ## Configuring running parameters
@@ -274,4 +276,4 @@ These are some solutions to some common problems.
    same subnetwork. For example, if the server's IP is `192.168.0.100` and the
    client's IP is `192.168.1.120`, then they are on different subnetworks (the
    server is at 0 and the client is at 1). The current script only works when
-   both machines are at the same subnetwork.
+   both machines are on the same subnetwork.
