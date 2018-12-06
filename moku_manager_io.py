@@ -277,8 +277,20 @@ class MokuManagerIO(GameManagerIO):
                 print(str(probs[j]).rjust(2), end=' ')
             print()
         else:
-            for i in range(self.board_size[0]):
-                for j in range(self.board_size[1]):
-                    print(str(probs[i*self.board_size[1]+j]).rjust(2), end=' ')
+            for i in range(-1, self.board_size[0]+1):
+                for j in range(-1, self.board_size[1]+1):
+                    if i < 0 or i >= self.board_size[0]:
+                        if j < 0 or j >= self.board_size[1]:
+                            print('   ', end='')
+                        else:
+                            print(str(j+1).rjust(2), end=' ')
+                    else:
+                        if j < 0:
+                            print(str(i+1).rjust(2), end=' ')
+                        elif j >= self.board_size[1]:
+                            print(i+1, end='')
+                        else:
+                            print(str(probs[i*self.board_size[1]+j]).rjust(2),
+                                  end=' ')
                 print()
             print()
