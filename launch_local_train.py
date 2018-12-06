@@ -49,6 +49,7 @@ $ python launch_train.py --mode=tictactoe
 Or choose other valid arguments (see --help).
 """
 
+import argparse
 from datetime import datetime
 import multiprocessing as mp
 import os
@@ -69,74 +70,54 @@ config_proto = tf.ConfigProto()
 config_proto.gpu_options.allow_growth = True
 tf.enable_eager_execution(config=config_proto)
 
-valid_modes = utils.get_valid_game_modes_string()
-tf.flags.DEFINE_string(
-    'mode', None, 'a valid game mode name. valid modes are {%s}' % valid_modes)
-tf.flags.DEFINE_list(
-    'gpu_id', ['0'], 'list of GPU ids to use, or -1 to use CPU.')
-tf.flags.DEFINE_string(
-    'game_type', 'moku', 'type is a more general term which may include ' +
-    'many game modes. For example, moku is the type of tictactoe, connect4 ' +
-    'and gomoku modes.')
-tf.flags.DEFINE_integer(
-    'games_queue_port', -1, 'port opened to receive games from the ' +
-    'players\' queue. If negative, defaults to value in config.py')
-tf.flags.DEFINE_integer(
-    'file_server_port', -1, 'port opened to tranfer files to the players. ' +
-    'If negative, defaults to value in config.py')
-tf.flags.DEFINE_string(
-    'authkey', '', 'authentication key for the communication with players\'' +
-    'queue. If empty, defaults to value in config.py')
-tf.flags.DEFINE_integer(
-    'num_player_processes', 3, 'Number of parallel player processes to run.')
-
-FLAGS = tf.flags.FLAGS
-
 
 def main(argv):
+    args = parse_args()
+    
     valid_modes_list = utils.get_valid_game_modes()
-    if FLAGS.mode not in valid_modes_list:
+    valid_modes_string = utils.get_valid_game_modes_string()
+    if args.mode not in valid_modes_list:
         print('Invalid game mode informed. Please inform a mode with ' +
               '--mode=mode_name, where mode_name is one of the following ' +
-              '{%s}' % valid_modes)
+              '{%s}' % valid_modes_string)
         sys.exit()
 
-    FLAGS.gpu_id = [int(x) for x in FLAGS.gpu_id]
+    args.gpu_id = [int(x) for x in args.gpu_id]
 
-    gconf = utils.get_game_config(FLAGS.mode, 'test')
+    gconf = utils.get_game_config(args.mode, 'test')
 
-    if len(FLAGS.gpu_id) == 0:
-        player_gpu_ids = [-1 for _ in range(FLAGS.num_player_processes)]
-    elif len(FLAGS.gpu_id) == 1:
+    if len(args.gpu_id) == 0:
+        player_gpu_ids = [-1 for _ in range(args.num_player_processes)]
+    elif len(args.gpu_id) == 1:
         player_gpu_ids = [
-            FLAGS.gpu_id[0] for _ in range(FLAGS.num_player_processes)]
+            args.gpu_id[0] for _ in range(args.num_player_processes)]
     else:
         # Leave first GPU for training and the others for playing
-        gpus_for_players = FLAGS.gpu_id[1:]
+        gpus_for_players = args.gpu_id[1:]
         player_gpu_ids = []
-        num_repetitions = (FLAGS.num_player_processes //
+        num_repetitions = (args.num_player_processes //
                            len(gpus_for_players) + 1)
         for _ in range(num_repetitions):
             player_gpu_ids += gpus_for_players
-        player_gpu_ids = player_gpu_ids[:FLAGS.num_player_processes]
+        player_gpu_ids = player_gpu_ids[:args.num_player_processes]
 
     print('Player gpu ids', player_gpu_ids)
 
-    if FLAGS.game_type == 'moku':
+    if args.game_type == 'moku':
         (game_config_string, game_manager_module, game_manager_kwargs,
             _, _) = \
                 utils.generate_moku_manager_params(
                     gconf.drop_mode, gconf.moku_size, gconf.board_size,
-                    FLAGS.gpu_id[0], gconf.num_res_layers, gconf.num_channels)
+                    args.gpu_id[0], gconf.num_res_layers, gconf.num_channels)
     else:
         raise NotImplementedError(
-            'Game type %s is not supported.' % FLAGS.game_type)
+            'Game type %s is not supported.' % args.game_type)
 
     max_ckpts_to_keep = 1
 
     players_game_manager_kwargs = []
     for gpu_id in player_gpu_ids:
-        if FLAGS.game_type == 'moku':
+        if args.game_type == 'moku':
             (game_config_string, game_manager_module, game_manager_kwargs,
                 _, _) = \
                     utils.generate_moku_manager_params(
@@ -144,7 +125,7 @@ def main(argv):
                         gpu_id, gconf.num_res_layers, gconf.num_channels)
         else:
             raise NotImplementedError(
-                'Game type %s is not supported.' % FLAGS.game_type)
+                'Game type %s is not supported.' % args.game_type)
         players_game_manager_kwargs.append(game_manager_kwargs)
 
     train_dir = osp.join('train_files', game_config_string)
@@ -193,7 +174,7 @@ def main(argv):
             gconf.dirichlet_noise_param, gconf.eval_batch_size,
             game_manager_module, players_game_manager_kwargs[i],
         )
-    ) for i in range(FLAGS.num_player_processes)]
+    ) for i in range(args.num_player_processes)]
     for p in players_p:
         p.daemon = True
         p.start()
@@ -215,6 +196,40 @@ def main(argv):
             gconf.backpropagate_losing_policies,
             gconf.keep_checkpoint_every_n_hours, game_config_string,
             game_manager_module, game_manager_kwargs)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    valid_modes = utils.get_valid_game_modes_string()
+    parser.add_argument(
+        '--mode',
+        help=('A valid game mode name. valid modes are {%s}.' % valid_modes),
+        default=None
+    )
+    parser.add_argument(
+        '--gpu_id',
+        nargs='+',
+        help=('List (separated by spaces) of GPU ids to use, or -1 to use ' +
+              'the CPU.'),
+        default=['0']
+    )
+    parser.add_argument(
+        '--game_type',
+        help=('Type is a more general term which may include many game ' +
+              'modes. For example, moku is the type of tictactoe, connect4 ' +
+              'and gomoku modes.'),
+        default='moku'
+    )
+    parser.add_argument(
+        '-n',
+        '--num_player_processes',
+        help=('Number of parallel player processes to run.'),
+        default=3,
+        type=int
+    )
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == '__main__':
     tf.app.run()

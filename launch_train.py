@@ -49,6 +49,7 @@ $ python launch_train.py --mode=tictactoe
 Or choose other valid arguments (see --help).
 """
 
+import argparse
 from datetime import datetime
 import multiprocessing as mp
 import os
@@ -67,47 +68,29 @@ config_proto = tf.ConfigProto()
 config_proto.gpu_options.allow_growth = True
 tf.enable_eager_execution(config=config_proto)
 
-valid_modes = utils.get_valid_game_modes_string()
-tf.flags.DEFINE_string(
-    'mode', None, 'a valid game mode name. valid modes are {%s}' % valid_modes)
-tf.flags.DEFINE_integer(
-    'gpu_id', 0, 'id of the GPU to use, or -1 to use CPU.')
-tf.flags.DEFINE_string(
-    'game_type', 'moku', 'type is a more general term which may include ' +
-    'many game modes. For example, moku is the type of tictactoe, connect4 ' +
-    'and gomoku modes.')
-tf.flags.DEFINE_integer(
-    'games_queue_port', -1, 'port opened to receive games from the ' +
-    'players\' queue. If negative, defaults to value in config.py')
-tf.flags.DEFINE_integer(
-    'file_server_port', -1, 'port opened to tranfer files to the players. ' +
-    'If negative, defaults to value in config.py')
-tf.flags.DEFINE_string(
-    'authkey', '', 'authentication key for the communication with players\'' +
-    'queue. If empty, defaults to value in config.py')
-
-FLAGS = tf.flags.FLAGS
-
 
 def main(argv):
+    args = parse_args()
+
     valid_modes_list = utils.get_valid_game_modes()
-    if FLAGS.mode not in valid_modes_list:
+    valid_modes_string = utils.get_valid_game_modes_string()
+    if args.mode not in valid_modes_list:
         print('Invalid game mode informed. Please inform a mode with ' +
               '--mode=mode_name, where mode_name is one of the following ' +
-              '{%s}' % valid_modes)
+              '{%s}' % valid_modes_string)
         sys.exit()
 
-    gconf = utils.get_game_config(FLAGS.mode, 'test')
+    gconf = utils.get_game_config(args.mode, 'test')
 
-    if FLAGS.game_type == 'moku':
+    if args.game_type == 'moku':
         (game_config_string, game_manager_module, game_manager_kwargs,
             _, _) = \
                 utils.generate_moku_manager_params(
                     gconf.drop_mode, gconf.moku_size, gconf.board_size,
-                    FLAGS.gpu_id, gconf.num_res_layers, gconf.num_channels)
+                    args.gpu_id, gconf.num_res_layers, gconf.num_channels)
     else:
         raise NotImplementedError(
-            'Game type %s is not supported.' % FLAGS.game_type)
+            'Game type %s is not supported.' % args.game_type)
 
     train_dir = osp.join('train_files', game_config_string)
 
@@ -123,12 +106,12 @@ def main(argv):
 
     netconf = NetworkConfig()
 
-    if FLAGS.games_queue_port >= 0:
-        netconf.games_queue_port = FLAGS.games_queue_port
-    if FLAGS.file_server_port >= 0:
-        netconf.file_server_port = FLAGS.file_server_port
-    if FLAGS.authkey != '':
-        netconf.authkey = FLAGS.authkey.encode('utf-8')
+    if args.games_queue_port >= 0:
+        netconf.games_queue_port = args.games_queue_port
+    if args.file_server_port >= 0:
+        netconf.file_server_port = args.file_server_port
+    if args.authkey != '':
+        netconf.authkey = args.authkey.encode('utf-8')
 
     server_manager = init_server_manager(
         netconf.games_queue_port, netconf.authkey, gconf.queue_capacity)
@@ -194,6 +177,52 @@ def init_server_manager(port, authkey, queue_capacity):
     manager.start()
     print('Started server at port %s' % port)
     return manager
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    valid_modes = utils.get_valid_game_modes_string()
+    parser.add_argument(
+        '--mode',
+        help=('A valid game mode name. valid modes are {%s}.' % valid_modes),
+        default=None
+    )
+    parser.add_argument(
+        '--gpu_id',
+        help=('GPU id to use, or -1 to use the CPU.'),
+        default=0,
+        type=int
+    )
+    parser.add_argument(
+        '--game_type',
+        help=('Type is a more general term which may include many game ' +
+              'modes. For example, moku is the type of tictactoe, connect4 ' +
+              'and gomoku modes.'),
+        default='moku'
+    )
+    parser.add_argument(
+        '--games_queue_port',
+        help=('Port opened to receive games from the ' +
+              'players\' queue. If negative, defaults to value in config.py'),
+        default=-1,
+        type=int
+    )
+    parser.add_argument(
+        '--file_server_port',
+        help=('Port opened to tranfer files to the players. ' +
+              'If negative, defaults to value in config.py.'),
+        default=-1,
+        type=int
+    )
+    parser.add_argument(
+        '--authkey',
+        help=('Authentication key for the communication with players\'' +
+              'queue. If empty, defaults to value in config.py.'),
+        default=''
+    )
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == '__main__':
     tf.app.run()
