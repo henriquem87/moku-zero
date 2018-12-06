@@ -101,7 +101,7 @@ each other:
 For example, if you want to play tic-tac-toe against the computer, you can run:
 
 ```bash
-python test.py --mode=tictactoe --iuser=0 --num_iters_ckpt=-1 --gpu_id=-1
+python test.py --mode tictactoe --iuser 0 --num_iters_ckpt -1 --gpu_id -1
 ```
 
 You can also try other games by replacing `tictactoe` by another game.
@@ -120,28 +120,27 @@ the moves.
 
 ### Training your own model
 
-Training a model requires running two scripts:
-
-- `launch_train.py` for handling the training stage
-- `launch_players.py` for handling the game generation stage
-
-They can be run on the same computer or on different computers on the same
-network. If you want to stop the training at any moment, just use the command
-`CTRL+C` on the terminal where `launch_train.py` is running.
+Training can be done on a single computer or on different computers on the same
+network.
 
 #### Running on the same computer
 
 Open a terminal and run:
 ```bash
-python launch_local_train.py --mode=tictactoe --num_player_processes=3 --gpu_id=-1
+python launch_local_train.py --mode tictactoe --num_player_processes 3 --gpu_id -1
 ```
 You can adapt `--num_player_processes` according to the capacity of your
 computer. Notice that the `--gpu_id` accepts a list
-of IDs, separated by commas without spaces. If you inform multiple IDs, the
+of IDs, separated by spaces. If you inform multiple IDs, the
 first GPU in the list will be assigned to the trainer, while the remaining ones
 will be equally split among the player processes.
 
 #### Running on a local network
+
+Training a model requires running two scripts:
+
+- `launch_train.py` for handling the training stage
+- `launch_players.py` for handling the game generation stage
 
 The training can be distributed to more than one machine over a network.
 In this configuration, the optimization will be done on one machine
@@ -158,16 +157,23 @@ To train, follow these steps:
    with `ifconfig`).
 2. Open a terminal on the selected machine and start the training process:
     ```bash
-    python launch_train.py --mode=tictactoe --gpu_id=-1
+    python launch_train.py --mode tictactoe --gpu_id -1
     ```
 3. In each of the playing machines, launch the players with:
     ```bash
-    python launch_players.py --mode=tictactoe --num_player_processes=3 --gpu_id=-1 --server_ip=IP_address
+    python launch_players.py --mode tictactoe --num_player_processes 3 --gpu_id -1 --server_ip IP_address
     ```
-That should be all. You should see the progress on the server. If it does not
-work, first try to run on the same computer as explained above. If it works
-in a single machine, but not over the network, see
-[Troubleshooting](#troubleshooting) below.
+Notice that the `--gpu_id` in `launch_players.py` accepts a list of IDs,
+separated by spaces. If you inform multiple IDs, the GPU resources will be
+equally split among the player processes.
+
+That should be all. You should see the progress on the server. 
+If you want to stop the training at any moment, just use the command
+`CTRL+C` on the terminal running on the server. 
+
+If training on a local network does not work, first try to run on a single
+computer as explained above. If it works in a single machine, but not on
+the network, see [Troubleshooting](#troubleshooting) below.
 
 ### Putting models to play against each other
 
@@ -179,7 +185,7 @@ For example, to test the most recent model against a random
 player, you can run:
 
 ```bash
-python challenge.py --mode=tictactoe --num_iters_ckpt=0,-1 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
+python challenge.py --mode tictactoe --num_iters_ckpt 0 -1 --gpu_id -1 --num_challenges 10 --show_middle_game > challenge_results.txt
 ```
 
 Notice that we are redirecting the output to a file called
@@ -198,7 +204,7 @@ training directory:
 If you want to make all of them play against each other 10 times, you can run:
 
 ```bash
-python challenge.py --mode=tictactoe --num_iters_ckpt=5000,10000,15000,20000 --gpu_id=-1 --num_challenges=10 > challenge_results.txt
+python challenge.py --mode tictactoe --num_iters_ckpt 5000 10000 15000 20000 --gpu_id -1 --num_challenges 10 --show_middle_game > challenge_results.txt
 ```
 
 ## Configuring running parameters
