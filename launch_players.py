@@ -70,7 +70,7 @@ config_proto.gpu_options.allow_growth = True
 tf.enable_eager_execution(config=config_proto)
 
 
-def main(argv):
+def main():
     args = parse_args()
 
     valid_modes_list = utils.get_valid_game_modes()
@@ -257,4 +257,4 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    tf.app.run()
+    main()
