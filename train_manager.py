@@ -35,7 +35,6 @@ import os
 import os.path as osp
 import shutil
 import tensorflow as tf
-import time
 
 
 def train_manager(player_trmanager_queue,

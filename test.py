@@ -43,7 +43,6 @@ Or choose another valid mode (see --help).
 
 import argparse
 import numpy as np
-import os
 import os.path as osp
 import sys
 import tensorflow as tf

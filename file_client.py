@@ -31,7 +31,6 @@
 
 """ Code for handling file transfers in the client (player) side. """
 
-import hashlib
 import os.path as osp
 import socket
 from utils import checksum
@@ -64,10 +63,10 @@ def file_client(server_ip, server_port,
         write_file_path = osp.join(file_dir, file_name)
         print('Receiving %s ...' % write_file_path)
         with open(write_file_path, 'wb') as f:
-            l = s.recv(PACKET_SIZE)
-            while l:
-                f.write(l)
-                l = s.recv(PACKET_SIZE)
+            packet = s.recv(PACKET_SIZE)
+            while packet:
+                f.write(packet)
+                packet = s.recv(PACKET_SIZE)
         print('Done receiving.')
         s.shutdown(socket.SHUT_WR)
         s.close()

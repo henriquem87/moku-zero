@@ -58,9 +58,6 @@ import sys
 import tensorflow as tf
 
 import utils
-from config import NetworkConfig
-from file_server import file_server
-from multiprocessing.managers import SyncManager
 from trainer import trainer
 from train_manager import train_manager
 from player import player
@@ -73,7 +70,7 @@ tf.enable_eager_execution(config=config_proto)
 
 def main(argv):
     args = parse_args()
-    
+
     valid_modes_list = utils.get_valid_game_modes()
     valid_modes_string = utils.get_valid_game_modes_string()
     if args.mode not in valid_modes_list:

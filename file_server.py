@@ -31,7 +31,6 @@
 
 """ Code for handling file transfers in the server (trainer) side. """
 
-import hashlib
 import os.path as osp
 import socket
 from utils import checksum
@@ -73,10 +72,10 @@ def file_server(train_dir, port):
 
             print('Sending file %s ...' % file_path)
             with open(file_path, 'rb') as f:
-                l = f.read(PACKET_SIZE)
-                while l:
-                    c.send(l)
-                    l = f.read(PACKET_SIZE)
+                packet = f.read(PACKET_SIZE)
+                while packet:
+                    c.send(packet)
+                    packet = f.read(PACKET_SIZE)
             print('%s sent.' % file_path)
         else:
             print('File %s cannot be found, ignoring request.' % file_path)

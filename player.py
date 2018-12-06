@@ -31,11 +31,8 @@
 
 import numpy as np
 import os.path as osp
-import sys
 import tensorflow as tf
-import time
 
-import utils
 from mcts import MCTS
 
 tfe = tf.contrib.eager

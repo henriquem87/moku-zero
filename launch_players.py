@@ -72,7 +72,7 @@ tf.enable_eager_execution(config=config_proto)
 
 def main(argv):
     args = parse_args()
-    
+
     valid_modes_list = utils.get_valid_game_modes()
     valid_modes_string = utils.get_valid_game_modes_string()
     if args.mode not in valid_modes_list:

@@ -34,7 +34,6 @@
 import config
 import hashlib
 import inspect
-import numpy as np
 import os
 import os.path as osp
 import sys
@@ -136,7 +135,8 @@ def get_checkpoint_path(train_dir, num_iters_ckpt):
             ckpt_files = [f[:f.rfind('.')] for f in ckpt_files]
             ckpt_files = sorted(list(set(ckpt_files)))
 
-            ckpt_num = [int(f.split('.')[0].split('-')[-1]) for f in ckpt_files]
+            ckpt_num = [int(f.split('.')[0].split('-')[-1])
+                        for f in ckpt_files]
             ckpt_dict = {n: f for n, f in zip(ckpt_num, ckpt_files)}
 
             if num_iters_ckpt < 0 and len(ckpt_files) == 0:
@@ -150,8 +150,8 @@ def get_checkpoint_path(train_dir, num_iters_ckpt):
                     ckpt_num_str = sorted(list(set(ckpt_num)))
                     ckpt_num_str = [str(x) for x in ckpt_num_str]
                     print('Checkpoint with ' + str(num_iters_ckpt) +
-                        ' iterations cannot be found, the available values ' +
-                        'are: {' + ', '.join(ckpt_num_str) + '}')
+                          ' iterations cannot be found, the available ' +
+                          'values are: {' + ', '.join(ckpt_num_str) + '}')
                     sys.exit()
 
                 ckpt_path = osp.join(train_dir, ckpt_name)

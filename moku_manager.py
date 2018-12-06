@@ -30,7 +30,6 @@
 # #############################################################################
 
 import numpy as np
-import os.path as osp
 import tensorflow as tf
 
 from game_manager import GameManager
