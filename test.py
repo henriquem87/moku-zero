@@ -41,6 +41,7 @@ $ python test.py --mode=tictactoe
 Or choose another valid mode (see --help).
 """
 
+import argparse
 import numpy as np
 import os
 import os.path as osp
@@ -57,61 +58,33 @@ config_proto = tf.ConfigProto()
 config_proto.gpu_options.allow_growth = True
 tf.enable_eager_execution(config=config_proto)
 
-valid_modes = utils.get_valid_game_modes_string()
-tf.flags.DEFINE_string(
-    'mode', None, 'a valid game mode name. valid modes are {%s}' % valid_modes)
-tf.flags.DEFINE_integer(
-    'iuser', 0, 'index of the user, 0 to play first and 1 to play second. ' +
-    'Or you can also use -1 to let the computer play as both players or ' +
-    '2 if you want to play as both players.')
-tf.flags.DEFINE_integer(
-    'num_iters_ckpt', -1, 'number of iterations in the checkpoint to load.' +
-    ' e.g. if the file is called moku3_3x3_1000.ckpt, type 1000.' +
-    ' Use -1 to load the latest checkpoint or 0 to use a naive network.')
-tf.flags.DEFINE_integer(
-    'gpu_id', 0, 'id of the GPU to use, or -1 to use CPU.')
-tf.flags.DEFINE_string(
-    'game_type', 'moku', 'type is a more general term which may include ' +
-    'many game modes. For example, moku is the type of tictactoe, connect4 ' +
-    'and gomoku modes.')
-tf.flags.DEFINE_boolean(
-    'show_mcts', False, 'If set, the MCTS stats for the current state will ' +
-    'be displayed.')
-tf.flags.DEFINE_boolean(
-    'show_move_prob', False, 'If set, the probabilities of playing at ' +
-    'each position will be displayed.')
-tf.flags.DEFINE_boolean(
-    'show_move_prob_temp', False, 'If set, the probabilities of playing at ' +
-    'each position rebalanced by the temperature will be displayed.')
-tf.flags.DEFINE_boolean(
-    'show_win_prob', False, 'If set, the winning probability estimated by ' +
-    'the network will be displayed.')
-FLAGS = tf.flags.FLAGS
-
 
 def main(argv):
+    args = parse_args()
+
     valid_modes_list = utils.get_valid_game_modes()
-    if FLAGS.mode not in valid_modes_list:
+    valid_modes_string = utils.get_valid_game_modes_string()
+    if args.mode not in valid_modes_list:
         print('Invalid game mode informed. Please inform a mode with ' +
               '--mode=mode_name, where mode_name is one of the following ' +
-              '{%s}' % valid_modes)
+              '{%s}' % valid_modes_string)
         sys.exit()
 
-    gconf = utils.get_game_config(FLAGS.mode, 'test')
+    gconf = utils.get_game_config(args.mode, 'test')
 
-    if FLAGS.game_type == 'moku':
+    if args.game_type == 'moku':
         (game_config_string, game_manager_module, game_manager_kwargs,
             game_manager_io_module, game_manager_io_kwargs) = \
                 utils.generate_moku_manager_params(
                     gconf.drop_mode, gconf.moku_size, gconf.board_size,
-                    FLAGS.gpu_id, gconf.num_res_layers, gconf.num_channels)
+                    args.gpu_id, gconf.num_res_layers, gconf.num_channels)
     else:
         raise NotImplementedError(
-            'Game type %s is not supported.' % FLAGS.game_type)
+            'Game type %s is not supported.' % args.game_type)
 
     train_dir = osp.join('train_files', game_config_string)
 
-    ckpt_path = utils.get_checkpoint_path(train_dir, FLAGS.num_iters_ckpt)
+    ckpt_path = utils.get_checkpoint_path(train_dir, args.num_iters_ckpt)
 
     game_manager_kwargs['ckpt_path'] = ckpt_path
 
@@ -143,33 +116,33 @@ def main(argv):
         imc = iplayer % len(mctss)
         print('===== New turn =====')
         game_manager_io.print_board(state, last_played_imove)
-        if FLAGS.iuser == 2 or iplayer == FLAGS.iuser:
+        if args.iuser == 2 or iplayer == args.iuser:
             # User types a move
             imove = game_manager_io.get_input(state)
         if imove == GameManagerIO.IEXIT:
             break
         if imove == GameManagerIO.ICOMPUTER_MOVE or \
-                (FLAGS.iuser != 2 and iplayer != FLAGS.iuser):
+                (args.iuser != 2 and iplayer != args.iuser):
             # Computer chooses a move
             stats = mctss[imc].simulate(state, gconf.max_seconds_per_move)
-            if FLAGS.show_mcts:
+            if args.show_mcts:
                 print('MCTS stats')
                 game_manager_io.print_stats(stats)
                 print()
 
-            if FLAGS.show_win_prob or imove == GameManagerIO.ICOMPUTER_MOVE:
+            if args.show_win_prob or imove == GameManagerIO.ICOMPUTER_MOVE:
                 with tf.device(game_manager_kwargs['tf_device']):
                     _, value_prior = game_manager.predict(
                         tf.constant(state.state[np.newaxis], tf.float32))
                     win_prob = (value_prior[0] + 1.0) / 2.0
                     print('Estimated win probability: %.03f\n' % win_prob)
 
-            if FLAGS.show_move_prob or imove == GameManagerIO.ICOMPUTER_MOVE:
+            if args.show_move_prob or imove == GameManagerIO.ICOMPUTER_MOVE:
                 print('Move probabilities:')
                 game_manager_io.print_stats_on_board(stats, 1)
                 print()
 
-            if FLAGS.show_move_prob_temp:
+            if args.show_move_prob_temp:
                 print('Move probabilities with temperature ' +
                       '%.1e' % turn_temperature)
                 game_manager_io.print_stats_on_board(stats, turn_temperature)
@@ -197,12 +170,95 @@ def main(argv):
         if iwinner < 0:
             print('DRAW')
         else:
-            if FLAGS.iuser == 2:
+            if args.iuser == 2:
                 print('Player %d WON.' % (iwinner + 1))
-            elif iwinner == FLAGS.iuser:
+            elif iwinner == args.iuser:
                 print('You WON!')
             else:
                 print('You LOST!')
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    valid_modes = utils.get_valid_game_modes_string()
+    parser.add_argument(
+        '--mode',
+        help=('A valid game mode name. valid modes are {%s}.' % valid_modes),
+        default=None
+    )
+    parser.add_argument(
+        '--gpu_id',
+        help=('GPU id to use, or -1 to use the CPU.'),
+        default=0,
+        type=int
+    )
+    parser.add_argument(
+        '--game_type',
+        help=('Type is a more general term which may include many game ' +
+              'modes. For example, moku is the type of tictactoe, connect4 ' +
+              'and gomoku modes.'),
+        default='moku'
+    )
+    parser.add_argument(
+        '--iuser',
+        help=('Index of the user, 0 to play first and 1 to play second. ' +
+              'Or you can also use -1 to let the computer play as both ' +
+              'players or 2 if you want to play as both players.'),
+        default=0,
+        type=int
+    )
+    parser.add_argument(
+        '--num_iters_ckpt',
+        help=('Number of iterations in the checkpoint to load. ' +
+              'e.g. if the file is called moku3_3x3_1000.ckpt, type 1000. ' +
+              'Use -1 to load the latest checkpoint or 0 to use a naive ' +
+              'network.'),
+        default=-1,
+        type=int
+    )
+    parser.add_argument(
+        '-sm',
+        '--show_mcts',
+        help=('If set, the MCTS stats for the current state will ' +
+              'be displayed.'),
+        nargs='?',
+        const=True,
+        default=False,
+        type=bool
+    )
+    parser.add_argument(
+        '-sp',
+        '--show_move_prob',
+        help=('If set, the probabilities of playing at each position will ' +
+              'be displayed.'),
+        nargs='?',
+        const=True,
+        default=False,
+        type=bool
+    )
+    parser.add_argument(
+        '-spt',
+        '--show_move_prob_temp',
+        help=('If set, the probabilities of playing at each position ' +
+              'rebalanced by the temperature will be displayed.'),
+        nargs='?',
+        const=True,
+        default=False,
+        type=bool
+    )
+    parser.add_argument(
+        '-sw',
+        '--show_win_prob',
+        help=('If set, the winning probability estimated by the network ' +
+              'will be displayed.'),
+        nargs='?',
+        const=True,
+        default=False,
+        type=bool
+    )
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == '__main__':
     tf.app.run()
