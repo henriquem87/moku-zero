@@ -131,20 +131,15 @@ network. If you want to stop the training at any moment, just use the command
 
 #### Running on the same computer
 
-1. Open two terminals on your computer.
-2. In the first one, run:
-    ```bash
-    python launch_train.py --mode=tictactoe --gpu_id=-1
-    ```
-3. After the training script is running successfully, run the following on the
-   second terminal:
-    ```bash
-    python launch_players.py --mode=tictactoe --num_player_processes=3 --gpu_id=-1
-    ```
-    You can adapt `--num_player_processes` according to the capacity of your
-    computer. Notice that the `--gpu_id` in `launch_players.py` accepts a list
-    of IDs, separated by commas without spaces. If you inform multiple IDs, the
-    player processes will be equally split among the informed IDs.
+Open a terminal and run:
+```bash
+python launch_local_train.py --mode=tictactoe --num_player_processes=3 --gpu_id=-1
+```
+You can adapt `--num_player_processes` according to the capacity of your
+computer. Notice that the `--gpu_id` accepts a list
+of IDs, separated by commas without spaces. If you inform multiple IDs, the
+first GPU in the list will be assigned to the trainer, while the remaining ones
+will be equally split among the player processes.
 
 #### Running on a local network
 
